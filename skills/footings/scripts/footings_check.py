@@ -63,7 +63,7 @@ SECRET_CONTENT_PATTERNS = [
     (re.compile(r"\bAIza[0-9A-Za-z_-]{35}\b"), "Google API key"),
     (re.compile(r"\bhf_[A-Za-z0-9]{30,}\b"), "Hugging Face token"),
     (re.compile(r"\b[MN][A-Za-z\d]{23,25}\.[\w-]{6}\.[\w-]{27,}\b"), "Discord bot token"),
-    (re.compile(r"postgres(?:ql)?://[^:\s/]+:[^@\s]{3,}@"), "database URL with password"),
+    (re.compile(r"postgres(?:ql)?://[^:\s/'\"]+:[^@\s'\"\]]{3,}@"), "database URL with password"),
     (re.compile(r"mysql://[^:\s/]+:[^@\s]{3,}@"), "database URL with password"),
     (re.compile(r"mongodb(?:\+srv)?://[^:\s/]+:[^@\s]{3,}@"), "database URL with password"),
 ]
@@ -100,7 +100,29 @@ def _git_tracked(root: Path) -> set[str] | None:
     return {p for p in out.stdout.decode("utf-8", "replace").split("\0") if p}
 
 
+def _git_visible(root: Path) -> list[str] | None:
+    """Tracked plus untracked files that git does not ignore."""
+    try:
+        out = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "-co", "--exclude-standard"],
+                             capture_output=True, timeout=30)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if out.returncode != 0:
+        return None
+    return [p for p in out.stdout.decode("utf-8", "replace").split(chr(0)) if p]
+
+
 def _walk(root: Path):
+    visible = _git_visible(root)
+    if visible is not None:
+        for rel in visible:
+            parts = rel.split("/")
+            if any(part in SKIP_DIRS for part in parts[:-1]):
+                continue
+            path = root / rel
+            if path.is_file():
+                yield path
+        return
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
         for name in filenames:
@@ -120,6 +142,8 @@ def _read_text(path: Path) -> str | None:
 
 
 def _line_secret(line: str, is_doc: bool) -> str | None:
+    if "re.compile(" in line or "RegExp(" in line:
+        return None  # a detection pattern, not a secret
     for pat, kind in SECRET_CONTENT_PATTERNS:
         if pat.search(line):
             return kind

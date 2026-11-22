@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+# eval runs and fixtures stay local: they quote other people's code
+evals/runs/
+evals/fixtures/

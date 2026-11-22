@@ -1,0 +1,14 @@
+{
+  "name": "footings",
+  "description": "footings, senior engineering judgement for agent-built projects",
+  "owner": { "name": "Nate Codes", "url": "https://github.com/newsbubbles" },
+  "plugins": [
+    {
+      "name": "footings",
+      "source": "./",
+      "description": "Resolve intent, use real names, check what nobody mentions, and grow a vibe-coded project phase by phase.",
+      "category": "development",
+      "tags": ["architecture", "engineering", "vibe-coding", "security", "planning"]
+    }
+  ]
+}

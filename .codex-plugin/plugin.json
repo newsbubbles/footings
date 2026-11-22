@@ -1,0 +1,25 @@
+{
+  "name": "footings",
+  "version": "0.1.0",
+  "description": "Senior engineering judgement for projects an AI agent builds. footings resolves intent before building, maps the system into standard layers, corrects invented names to industry terms, checks the requirements nobody mentions (security, backups, failure, cost, scale), and walks a project from a messy prototype to scale-ready, one phase at a time.",
+  "author": { "name": "Nate Codes", "url": "https://github.com/newsbubbles" },
+  "homepage": "https://github.com/newsbubbles/footings",
+  "repository": "https://github.com/newsbubbles/footings",
+  "license": "MIT",
+  "keywords": ["architecture", "engineering", "vibe-coding", "security", "scaling", "planning"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "footings",
+    "shortDescription": "Engineering judgement for agent-built projects",
+    "longDescription": "Senior engineering judgement for projects an AI agent builds. footings resolves intent before building, maps the system into standard layers, corrects invented names to industry terms, checks the requirements nobody mentions (security, backups, failure, cost, scale), and walks a project from a messy prototype to scale-ready, one phase at a time.",
+    "developerName": "Measured Instruments LLC",
+    "category": "Coding",
+    "capabilities": [],
+    "websiteURL": "https://github.com/newsbubbles/footings",
+    "defaultPrompt": [
+      "Use footings on this project. Start with the check and tell me which phase we are in.",
+      "Is this ready for a thousand users? Use footings.",
+      "Map my names to the real engineering terms and write the glossary."
+    ]
+  }
+}

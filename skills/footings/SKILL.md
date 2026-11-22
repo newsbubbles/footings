@@ -27,6 +27,8 @@ python skills/footings/scripts/footings_check.py /path/to/project
 
 (Adjust the path to wherever this skill is installed. The script uses only the Python standard library and never prints secret values.)
 
+**The script is a floor, not a ceiling.** A clean report does not mean the project is clean. Never tell the user "no secrets found" from the script alone. Secrets in agent-built projects leak most often through the agents' own notes, memory folders, chat exports, logs, archives (zip files) and git history. Open those yourself and read them before you say anything about security.
+
 | Phase | Name | Done when |
 |---|---|---|
 | 0 | Intent | `docs/INTENT.md` holds an outcome, a user, a success test, constraints and an ambition level the user agreed to |
@@ -44,7 +46,7 @@ Each phase is described in `references/phases.md`, with its checks and what to t
 ## How to talk to the user
 
 - Speak their language, and their human language. If their English is not fluent, offer to answer in their first language.
-- Short. Lead with the answer. One idea per sentence. No walls of text: the user writes them, so you must not.
+- Short. Lead with the answer. One idea per sentence. No walls of text: the user writes them, so you must not. **A chat reply stays under 300 words** unless the user asks for more. Give the top three points, then offer the rest. Long material (a full audit, a plan, commands) goes into a file in `docs/`, and the reply names the file.
 - Teach one real term at a time, with a one-line meaning: "This is called a message queue: a list of jobs waiting to be done."
 - Explain any part of the system in two sentences. If you cannot, it is not understood yet; say so and find out.
 - Use a diagram when structure matters. Mermaid is the default (`references/diagrams.md`). If the harness can show images, render it.

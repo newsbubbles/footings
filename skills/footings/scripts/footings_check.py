@@ -71,6 +71,11 @@ GENERIC_SECRET = re.compile(
     r"""(?ix)\b(password|passwd|pwd|secret|api[_-]?key|access[_-]?token|auth[_-]?token|private[_-]?key|client[_-]?secret)\b
     \s*[:=]\s*["']([^"'\s]{8,})["']"""
 )
+# passwords written down in prose: agent notes, chat exports, READMEs (English and German)
+PROSE_SECRET = re.compile(
+    r"""(?i)\b(password|passwort|kennwort|passphrase|pw|token|api[\s_-]?key|secret)\b[^`'"\n]{0,30}[`'"]([^`'"\s]{6,})[`'"]"""
+)
+HTPASSWD_LINE = re.compile(r"^[\w.-]{1,32}:\$(apr1|2[aby]|5|6)\$")
 PLACEHOLDER = re.compile(r"(?i)(your|example|changeme|change_me|xxx|placeholder|dummy|test|<|\$\{|\{\{|env\(|getenv|environ|process\.env|\*\*\*)")
 
 DB_PORTS = {"5432": "PostgreSQL", "3306": "MySQL", "6379": "Redis", "27017": "MongoDB", "9200": "Elasticsearch", "11434": "Ollama", "6333": "Qdrant", "8080": "an internal web service"}
@@ -112,6 +117,56 @@ def _read_text(path: Path) -> str | None:
     if b"\0" in data[:4096]:
         return None
     return data.decode("utf-8", "replace")
+
+
+def _line_secret(line: str, is_doc: bool) -> str | None:
+    for pat, kind in SECRET_CONTENT_PATTERNS:
+        if pat.search(line):
+            return kind
+    if HTPASSWD_LINE.search(line):
+        return "password hash (htpasswd)"
+    if not is_doc:
+        m = GENERIC_SECRET.search(line)
+        if m and not PLACEHOLDER.search(m.group(2)):
+            return f"hard-coded {m.group(1).lower()}"
+    m = PROSE_SECRET.search(line)
+    if m and not PLACEHOLDER.search(m.group(2)) and not re.fullmatch(r"[a-z_]+(\.[a-z_]+)*\(?\)?", m.group(2)):
+        return f"{m.group(1).lower()} written in plain text"
+    return None
+
+
+ARCHIVE_EXT = {".zip", ".jar", ".whl"}
+TEXTISH = DOC_EXT | set(CODE_EXT) | {".yml", ".yaml", ".toml", ".ini", ".cfg", ".json", ".env", ".conf", ".service", ".log", ".jsonl", ".csv", ""}
+
+
+def _scan_archive(path: Path):
+    """Yield (member, line_no, kind) for secrets inside a zip archive. Values are never returned."""
+    import zipfile
+    try:
+        with zipfile.ZipFile(path) as zf:
+            for info in zf.infolist()[:20000]:
+                if info.is_dir() or info.file_size > MAX_SCAN_BYTES:
+                    continue
+                member = info.filename
+                base = member.rsplit("/", 1)[-1]
+                for pat, kind in SECRET_FILE_PATTERNS:
+                    if pat.match(base) and not ENV_SAFE.search(base):
+                        yield member, None, kind
+                        break
+                ext = ("." + base.rsplit(".", 1)[-1].lower()) if "." in base else ""
+                if ext not in TEXTISH and not base.startswith(".env"):
+                    continue
+                data = zf.read(info)
+                if bytes(1) in data[:4096]:
+                    continue
+                for i, line in enumerate(data.decode("utf-8", "replace").splitlines(), 1):
+                    if len(line) > 2000:
+                        continue
+                    kind = _line_secret(line, ext in DOC_EXT)
+                    if kind:
+                        yield member, i, kind
+    except (OSError, ValueError, RuntimeError, zipfile.BadZipFile, NotImplementedError):
+        return
 
 
 def _rel(root: Path, path: Path) -> str:
@@ -174,6 +229,9 @@ def check(root: Path) -> dict:
                 break
 
         ext = path.suffix.lower()
+        if ext in ARCHIVE_EXT:
+            for member, line_no, kind in _scan_archive(path):
+                secret_hits.append((f"{rel}!{member}", kind, line_no, in_git))
         lowered = rel.lower()
         if re.search(r"(^|/)(tests?|spec|__tests__)/", lowered) or re.match(r"(test_.*\.py|.*_test\.(py|go)|.*\.(test|spec)\.[jt]sx?)$", name):
             has_tests = True
@@ -206,15 +264,7 @@ def check(root: Path) -> dict:
             for i, line in enumerate(lines, 1):
                 if len(line) > 2000:
                     continue
-                hit = None
-                for pat, kind in SECRET_CONTENT_PATTERNS:
-                    if pat.search(line):
-                        hit = kind
-                        break
-                if not hit and ext not in DOC_EXT:
-                    m = GENERIC_SECRET.search(line)
-                    if m and not PLACEHOLDER.search(m.group(2)):
-                        hit = f"hard-coded {m.group(1).lower()}"
+                hit = _line_secret(line, ext in DOC_EXT)
                 if hit:
                     secret_hits.append((rel, hit, i, in_git))
             # privileges and exposure

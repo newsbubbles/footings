@@ -42,7 +42,7 @@ Never delete the user's work while you organize it. Move it to an `archive/` fol
 ## Phase 2: Secure and stabilize
 
 **Check:** the script's security section, then by hand:
-- secrets in the repo or its history (keys, tokens, passwords, `.env` files);
+- secrets in the repo or its history (keys, tokens, passwords, `.env` files), including inside agents' notes, memory folders, chat exports, logs and archives such as zip files, which is where agent-built projects leak most;
 - processes running as root or as an admin user;
 - ports, databases, dashboards or admin pages open to the internet;
 - backups of data that matters, and whether a restore was ever tried;

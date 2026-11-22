@@ -1,6 +1,6 @@
 {
   "name": "footings",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Senior engineering judgement for projects an AI agent builds. footings resolves intent before building, maps the system into standard layers, corrects invented names to industry terms, checks the requirements nobody mentions (security, backups, failure, cost, scale), and walks a project from a messy prototype to scale-ready, one phase at a time.",
   "author": { "name": "Nate Codes", "url": "https://github.com/newsbubbles" },
   "homepage": "https://github.com/newsbubbles/footings",

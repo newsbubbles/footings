@@ -60,13 +60,14 @@ It is read-only, needs only Python 3.8+, and never prints secret values.
 
 ```
 skills/footings/
-  SKILL.md                 the six rules, the phases, how to talk to you
+  SKILL.md                 the seven rules, the phases, how to talk to you
   references/
     intent.md              the intent resolution protocol
     phases.md              each phase: check, do, tell, scale note, done when
     layers.md              the six layers and what nobody mentions on each
     vocabulary.md          common invented names and their standard terms; grand nouns
     pushback.md            how to disagree once, and the hard lines
+    building-on-others.md  evidence first, stable things at the bottom, other people's code stays theirs
     stack.md               decisions that are hard vs easy to reverse; boring defaults that grow
     diagrams.md            mermaid templates
   templates/               the five project docs

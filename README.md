@@ -19,7 +19,8 @@ Experienced engineers can use it too, as a checklist that never gets tired.
 - **Checks what nobody mentions.** Every request is placed on a layer (interface, services, data, integration, infrastructure, operations), and that layer's hidden requirements get checked: security, backups, failure, cost, scale.
 - **Pushes back once, then builds.** If something is unsafe, already exists or will hurt later, your agent says so once, with one alternative. Then it's your call.
 - **Walks you through phases.** Intent, survey, secure, name and organize, refactor, plan, build, ship, scale-ready. One phase at a time, with scale in mind from the start.
-- **Keeps the project's memory in five short files** under `docs/`: intent, glossary, architecture, scope and decisions. Every session reads them first, so nothing drifts.
+- **Protects what is proven.** If you want to combine your project with someone else's engine or tool, your agent compares both by evidence (tests, lock files, license) and builds the less proven one on top of the proven one, through its interface. It does not copy other people's code into your repo.
+- **Keeps the project's memory in five short files** under `docs/`: intent, glossary, architecture, scope and decisions. The skill tells every session to read them first. `init --agents-file` (below) also writes that instruction into `AGENTS.md`, for agents that do not load skills.
 
 ## Install
 
@@ -29,6 +30,8 @@ Experienced engineers can use it too, as a checklist that never gets tired.
 /plugin marketplace add newsbubbles/footings
 /plugin install footings@footings
 ```
+
+The plugin manifests are written to the Claude Code and Codex formats, but neither install has been tested in a clean setup yet. If one fails, use the copy method below and open an issue.
 
 **Any agent that supports skills:** copy the `skills/footings` folder into your agent's skills folder. For Claude Code that is `~/.claude/skills/` (all projects) or `.claude/skills/` (one project).
 
@@ -46,7 +49,7 @@ To set up the project docs and make every future session load footings:
 python path/to/skills/footings/scripts/footings_check.py init . --agents-file
 ```
 
-This creates `docs/INTENT.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `SCOPE.md` and `DECISIONS.md` (it never overwrites), and adds a short note to `AGENTS.md` (and `CLAUDE.md` if you have one).
+This creates `docs/INTENT.md`, `GLOSSARY.md`, `ARCHITECTURE.md`, `SCOPE.md` and `DECISIONS.md` (it never overwrites them), and adds a short note to the end of `AGENTS.md`, creating it if needed, and of `CLAUDE.md` if you have one. Without `--agents-file` it writes only the docs.
 
 To run the check by itself:
 
@@ -54,7 +57,7 @@ To run the check by itself:
 python path/to/skills/footings/scripts/footings_check.py .
 ```
 
-It is read-only, needs only Python 3.8+, and never prints secret values.
+It is read-only, needs only Python 3.8+ (tested on 3.8 and 3.12), and never prints secret values. It looks for leaked secrets in files git can see, including inside zip archives, but a clean report is not proof: agents' notes and git history still need a person or agent to read them.
 
 ## What's inside
 
@@ -72,9 +75,11 @@ skills/footings/
     diagrams.md            mermaid templates
   templates/               the five project docs
   scripts/footings_check.py
-evals/                     blind A/B tests of the skill against naive questions
+evals/                     A/B tests of the skill against naive questions; results in evals/RESULTS.md
 ```
+
+The evals are small: four questions, two fixture repositories, two answers per condition. See `evals/RESULTS.md` for what was blind and what was not.
 
 ## License
 
-MIT. Made by [Measured Instruments](https://github.com/newsbubbles).
+MIT. Made by [Measured Instruments](https://github.com/measuredinstruments).

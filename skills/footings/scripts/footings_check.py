@@ -206,8 +206,8 @@ def check(root: Path) -> dict:
     services: list[str] = []
     top_level = sorted(p.name for p in root.iterdir() if p.name not in SKIP_DIRS and not p.name.startswith("."))
     has_tests = False
-    manifests = [m for m in MANIFESTS if (root / m).exists()]
-    locks = [l for l in LOCKS if (root / l).exists()]
+    manifests: list[str] = []
+    locks: list[str] = []
     large_files: list[str] = []
     secret_hits: list[tuple[str, str, int | None, bool | None]] = []
 
@@ -228,6 +228,10 @@ def check(root: Path) -> dict:
                 secret_hits.append((rel, kind, None, in_git))
                 break
 
+        if name in MANIFESTS and rel.count("/") <= 3:
+            manifests.append(rel)
+        if name in LOCKS and rel.count("/") <= 3:
+            locks.append(rel)
         ext = path.suffix.lower()
         if ext in ARCHIVE_EXT:
             for member, line_no, kind in _scan_archive(path):

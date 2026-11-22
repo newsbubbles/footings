@@ -73,7 +73,7 @@ GENERIC_SECRET = re.compile(
 )
 # passwords written down in prose: agent notes, chat exports, READMEs (English and German)
 PROSE_SECRET = re.compile(
-    r"""(?i)\b(password|passwort|kennwort|passphrase|pw|token|api[\s_-]?key|secret)\b[^`'"\n]{0,30}[`'"]([^`'"\s]{6,})[`'"]"""
+    r"""(?i)\b(password|passwort|kennwort|passphrase|pw|token|api[\s_-]?key|secret)\b[\s:=(]{0,3}(?:is|ist|lautet|was|war)?[\s:=(]{0,3}(?P<q>[`'"])(?P<val>[^`'"\s]{6,})(?P=q)"""
 )
 HTPASSWD_LINE = re.compile(r"^[\w.-]{1,32}:\$(apr1|2[aby]|5|6)\$")
 PLACEHOLDER = re.compile(r"(?i)(your|example|changeme|change_me|xxx|placeholder|dummy|test|<|\$\{|\{\{|env\(|getenv|environ|process\.env|\*\*\*)")
@@ -153,10 +153,20 @@ def _line_secret(line: str, is_doc: bool) -> str | None:
         m = GENERIC_SECRET.search(line)
         if m and not PLACEHOLDER.search(m.group(2)):
             return f"hard-coded {m.group(1).lower()}"
-    m = PROSE_SECRET.search(line)
-    if m and not PLACEHOLDER.search(m.group(2)) and not re.fullmatch(r"[a-z_]+(\.[a-z_]+)*\(?\)?", m.group(2)):
-        return f"{m.group(1).lower()} written in plain text"
+    if is_doc:
+        m = PROSE_SECRET.search(line)
+        if m and _looks_like_password(m.group("val")):
+            return f"{m.group(1).lower()} written in plain text"
     return None
+
+
+def _looks_like_password(v: str) -> bool:
+    if PLACEHOLDER.search(v) or "<" in v or "/" in v:
+        return False
+    if re.fullmatch(r"[a-z_][a-z_.-]*", v):  # a lowercase identifier, file name or key name
+        return False
+    kinds = sum(bool(re.search(p, v)) for p in (r"[a-z]", r"[A-Z]", r"[0-9]", r"[^A-Za-z0-9]"))
+    return kinds >= 2
 
 
 ARCHIVE_EXT = {".zip", ".jar", ".whl"}
@@ -186,7 +196,7 @@ def _scan_archive(path: Path):
                 for i, line in enumerate(data.decode("utf-8", "replace").splitlines(), 1):
                     if len(line) > 2000:
                         continue
-                    kind = _line_secret(line, ext in DOC_EXT)
+                    kind = _line_secret(line, ext in DOC_EXT or ext in {".log", ".jsonl", ".txt", ""})
                     if kind:
                         yield member, i, kind
     except (OSError, ValueError, RuntimeError, zipfile.BadZipFile, NotImplementedError):
